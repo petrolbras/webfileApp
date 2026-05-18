@@ -1,5 +1,6 @@
 <script lang="ts">
     import type { PageData } from './$types';
+    import { invalidateAll } from '$app/navigation';
 
     let { data }: { data: PageData } = $props();
 
@@ -19,6 +20,41 @@
             .join('/');
 
     });
+
+    let fileInput: HTMLInputElement;
+
+    async function handleUpload(event: Event) { 
+        const target = event.target as HTMLInputElement;
+        const file = target.files?.[0];
+
+        if (!file) {
+            return;
+        }
+
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('path', data.currentPath);
+
+            const res = await fetch('/api/uploads', {
+                method: 'POST',
+                body: formData
+            })
+
+            const result = await res.json();
+
+            if (!res.ok) {
+                throw new Error(result.error || 'Upload failed');
+            }
+
+            await invalidateAll();
+        } catch (err) {
+            console.error("Upload error:", err);
+            alert("Failed to upload file.");
+        } finally {
+            target.value = '';
+        }
+    }
 </script>
 
 <div class="min-h-screen bg-zinc-950 text-zinc-100 flex items-center justify-center p-6">
@@ -27,9 +63,27 @@
 
         <div class="mb-8">
 
-            <h1 class="text-5xl font-bold tracking-tight mb-3">
-                Explorer
-            </h1>
+            <div class="flex items-center">
+
+                <h1 class="text-5xl font-bold tracking-tight mb-3">
+                    Explorer
+                </h1>
+                
+                <input
+                    bind:this={fileInput}
+                    type="file"
+                    class="hidden"
+                    onchange={handleUpload}
+                />
+
+                <button
+                    class="ml-auto bg-zinc-800 px-4 py-2 rounded-lg hover:bg-zinc-700 border border-zinc-600 cursor-pointer"
+                    onclick={() => fileInput.click()}
+                >
+                    +
+                </button>
+
+            </div>
 
             <nav class="flex flex-wrap items-center text-lg text-zinc-400 gap-1">
 
