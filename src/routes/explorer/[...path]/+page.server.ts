@@ -2,7 +2,7 @@ import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({params, fetch}) => {
     
-    const currentPath = (params as any).path || '';
+    const currentPath = ((params as any).path || '').replace(/\/+$/, '');;
 
     const url = currentPath
     ? `/api/explorer/${currentPath}`
