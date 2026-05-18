@@ -1,24 +1,33 @@
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({params, fetch}) => {
+    let data = null;
+
+    try {
+        const currentPath = ((params as any).path || '').replace(/\/+$/, '');;
+
+        const url = currentPath
+        ? `/api/explorer/${currentPath}`
+        : '/api/explorer';
+
+        const res = await fetch(url);
+
+        data = await res.json();
     
-    const currentPath = ((params as any).path || '').replace(/\/+$/, '');;
+        return {
+            status: res.status,
 
-    const url = currentPath
-    ? `/api/explorer/${currentPath}`
-    : '/api/explorer';
+            currentPath: data.currentPath || currentPath,
 
-    const res = await fetch(url);
+            files: data.files || [],
 
-    const data = await res.json();
-    
-    return {
-        status: res.status,
+            error: data.error || null
+        };
+    } catch (err) {
+        data = {
+            message: 'An error occurred while fetching the directory contents.',
 
-        currentPath: data.currentPath || currentPath,
-
-        files: data.files || [],
-
-        error: data.error || null
-    };
+            error: err instanceof Error ? err.message : String(err)
+        }
+    }
 }
