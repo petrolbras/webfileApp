@@ -33,8 +33,7 @@
     
     </nav>
     
-    <p class="text-xl text-red-600">Current path: {data.currentPath}</p>
-    
+
     {#if data.error}
     
         <p>{data.error}</p>
