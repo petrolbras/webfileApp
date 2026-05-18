@@ -22,16 +22,17 @@
 </script>
 
 <div class="min-h-screen bg-zinc-950 text-zinc-100 flex items-center justify-center p-6">
-    
-    <div class="w-full max-w-4xl rounded-2xl border border-zinc-800 bg-zinc-900 shadow-2xl p-8">
-        
+
+    <div class="w-full max-w-5xl rounded-2xl border border-zinc-800 bg-zinc-900 shadow-2xl p-8">
+
         <div class="mb-8">
+
             <h1 class="text-5xl font-bold tracking-tight mb-3">
                 Explorer
             </h1>
 
             <nav class="flex flex-wrap items-center text-lg text-zinc-400 gap-1">
-                
+
                 <a
                     href="/explorer"
                     class="hover:text-blue-400 transition-colors"
@@ -57,6 +58,7 @@
                 {/each}
 
             </nav>
+
         </div>
 
         {#if data.error}
@@ -72,13 +74,22 @@
                 <ul class="divide-y divide-zinc-800">
 
                     <li>
+
                         <a
                             href={parentPath ? `/explorer/${parentPath}` : '/explorer'}
                             class="flex items-center gap-3 px-5 py-4 hover:bg-zinc-800 transition-colors text-zinc-300"
                         >
-                            <span class="text-xl">◀</span>
-                            <span class="mt-1">Back</span>
+
+                            <span class="text-xl">
+                                ◀
+                            </span>
+
+                            <span class="mt-1">
+                                Back
+                            </span>
+
                         </a>
+
                     </li>
 
                 </ul>
@@ -92,28 +103,40 @@
         {:else}
 
             <div class="rounded-xl border border-zinc-800 overflow-hidden">
-                
+
                 <ul class="divide-y divide-zinc-800">
 
                     {#if data.currentPath === ''}
-                            <div
-                                class="flex items-center gap-3 px-5 py-4 text-zinc-600"
+
+                        <div
+                            class="flex items-center gap-3 px-5 py-4 text-zinc-600"
+                        >
+                            <span>
+                                This is the root folder.
+                            </span>
+                        </div>
+
+                    {:else}
+
+                        <li>
+
+                            <a
+                                href={parentPath ? `/explorer/${parentPath}` : '/explorer'}
+                                class="flex items-center gap-3 px-5 py-4 hover:bg-zinc-800 transition-colors text-zinc-300"
                             >
-                                <span>This is the root folder.</span>
-                            </div>
-                        {:else}
-                    
-                            <li>
-                                <a
-                                    href="./"
-                                    class="flex items-center gap-3 px-5 py-4 hover:bg-zinc-800 transition-colors text-zinc-300"
-                                >
 
-                                <span class="text-xl">◀</span>
+                                <span class="text-xl">
+                                    ◀
+                                </span>
 
-                                <span class="mt-1">Back</span>
-                                </a>
-                            </li>
+                                <span class="mt-1">
+                                    Back
+                                </span>
+
+                            </a>
+
+                        </li>
+
                     {/if}
 
                     {#each data.files as file}
@@ -128,29 +151,61 @@
                                             ? `/explorer/${data.currentPath}/${file.name}`
                                             : `/explorer/${file.name}`
                                     }
-                                    class="flex items-center gap-3 px-5 py-4 hover:bg-zinc-800 transition-colors"
+                                    class="flex items-center gap-4 px-5 py-4 hover:bg-zinc-800 transition-colors"
                                 >
-                                    <span class="text-yellow-400 text-2xl">
+
+                                    <span class="text-3xl shrink-0">
                                         📁
                                     </span>
 
-                                    <span class="text-xl hover:text-blue-400">
-                                        {file.name}
-                                    </span>
+                                    <div class="flex flex-col min-w-0">
+
+                                        <span class="text-xl text-zinc-100 break-all hover:text-blue-400">
+                                            {file.name}
+                                        </span>
+
+                                        <div class="flex items-center gap-2 text-sm text-zinc-500">
+
+                                            <span>
+                                                {file.size}
+                                            </span>
+
+                                        </div>
+
+                                    </div>
+
                                 </a>
 
                             {:else}
 
                                 <div
-                                    class="flex items-center gap-3 px-5 py-4 text-zinc-300"
+                                    class="flex items-center gap-4 px-5 py-4 text-zinc-300"
                                 >
-                                    <span class="text-2xl">
+
+                                    <span class="text-3xl shrink-0">
                                         📄
                                     </span>
 
-                                    <span class="text-xl">
-                                        {file.name}
-                                    </span>
+                                    <div class="flex flex-col min-w-0">
+
+                                        <span class="text-xl text-zinc-100 break-all">
+                                            {file.name}
+                                        </span>
+
+                                        <div class="flex items-center gap-2 text-sm text-zinc-500">
+
+                                            <span>
+                                                {file.size}
+                                            </span>
+
+                                            <span>
+                                                .{file.mime}
+                                            </span>
+
+                                        </div>
+
+                                    </div>
+
                                 </div>
 
                             {/if}
