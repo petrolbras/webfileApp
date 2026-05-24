@@ -1,8 +1,6 @@
 <script lang="ts">
     import type { PageData } from './$types';
     import { invalidateAll } from '$app/navigation';
-    import fs from 'fs/promises';
-    import { stopPropagation } from 'svelte/legacy';
 
     let { data }: { data: PageData } = $props();
 
