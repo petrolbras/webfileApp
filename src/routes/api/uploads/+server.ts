@@ -2,6 +2,7 @@ import path from 'path';
 import fs from 'fs/promises';
 import { createWriteStream } from 'fs';
 import { Readable } from 'stream';
+import { pipeline } from 'stream/promises';
 import { SanitizeName } from '$lib/SanitizeName';
 import { json } from '@sveltejs/kit';
 import { GetAvailableName } from '$lib/getAvailableName';
@@ -45,12 +46,10 @@ export async function POST({request}) {
         const nodeReadableStream = Readable.fromWeb(file.stream() as any);
         const writeStream = createWriteStream(finalFilePath);
 
-        await new Promise((resolve, reject) => {
-            nodeReadableStream.pipe(writeStream);
-            nodeReadableStream.on('error', reject);
-            writeStream.on('finish', resolve);
-            writeStream.on('error', reject);
-        });
+        await pipeline(
+            nodeReadableStream,
+            writeStream
+        );
 
         console.log("Saving to:", finalFilePath);
 
