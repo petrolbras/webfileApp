@@ -23,11 +23,11 @@ export async function DELETE({request}) {
         try {
             const stat = await fs.stat(targetPath);
 
-            if (!stat.isFile()) {
-                return json({ error: 'Target is not a file' }, { status: 400 });
+            if (stat.isDirectory()) {
+                await fs.rm(targetPath, { recursive: true, force: true });
+            } else {
+                await fs.unlink(targetPath);
             }
-
-            await fs.unlink(targetPath);
 
             return json({ message: 'File deleted successfully' });
 
