@@ -23,6 +23,33 @@
 
     let fileInput: HTMLInputElement;
 
+    async function deleteFile(path: string) {
+        if (!confirm(`Are you sure you want to delete "${path}"? This action cannot be undone.`)) {
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/delete', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ path })
+            });
+
+            const result = await res.json();
+
+            if (!res.ok) {
+                throw new Error(result.error);
+            }
+
+            await invalidateAll();
+        } catch (err) {
+            console.error("Delete error:", err);
+            alert("Failed to delete file.");
+        }
+    }
+
     async function handleUpload(event: Event) { 
         const target = event.target as HTMLInputElement;
         const file = target.files?.[0];
@@ -259,6 +286,8 @@
                                         </div>
 
                                     </div>
+
+                                    <button class="ml-auto bg-zinc-800 px-4 py-2 rounded-lg hover:bg-zinc-700 border border-zinc-600 cursor-pointer" onclick={() => deleteFile(file.path)}>Delete</button>
 
                                 </div>
 
