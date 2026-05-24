@@ -5,17 +5,17 @@ import { getDirSize } from '$lib/getDirSize';
 import { json } from '@sveltejs/kit';
 import { formatBytes } from '$lib/FormatBytes.js';
 
-const ROOT_DIR = path.resolve('storage');
+const STORAGE_DIR = path.resolve('storage');
 
 export async function GET({params}) {
     try {
         const relativepath = params.path || '';
 
-        const unsafepath = path.join(ROOT_DIR, relativepath);
+        const unsafepath = path.join(STORAGE_DIR, relativepath);
 
         const fullpath = path.resolve(unsafepath);
 
-        if (!fullpath.startsWith(ROOT_DIR)) {
+        if (!fullpath.startsWith(STORAGE_DIR)) {
 
             return json({
                 error: 'Access denied'
@@ -33,9 +33,14 @@ export async function GET({params}) {
                 size: entry.isDirectory()
                     ? formatBytes(await getDirSize(path.join(fullpath, entry.name)))
                     : formatBytes((await fs.stat(path.join(fullpath, entry.name))).size),
-                mime: entry.isDirectory() ? null : path.extname(entry.name).slice(1)
+                mime: entry.isDirectory() ? null : path.extname(entry.name).slice(1),
+                path: relativepath
+                    ? `${relativepath}/${entry.name}`
+                    : entry.name
+
             }))
         );
+        
 
         return json({ 
             currentPath: relativepath, 
@@ -54,6 +59,7 @@ export async function GET({params}) {
         }
 
         console.error(err);
+        
 
         return json({
             error: 'Internal server error'
