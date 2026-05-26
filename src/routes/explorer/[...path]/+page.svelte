@@ -5,6 +5,8 @@
 
     let { data }: { data: PageData } = $props();
 
+    let files = $derived.by(() => [...data.files]);
+
     const segments = $derived.by(() =>
         data.currentPath ? data.currentPath.split('/') : []
     );
@@ -37,9 +39,7 @@
 
     async function deleteFile(file: FileItem) {
 
-        console.log(file);
-
-        if (fileInput.type === 'folder') {
+        if (file.type === 'folder') {
             if (!confirm(`Are you sure you want to delete the folder "${file.path}" and all its contents?`)) {
                 return;
             }
@@ -64,10 +64,12 @@
                 throw new Error(result.error);
             }
 
-            await invalidateAll();
+            files = files.filter(f => f.path !== file.path);
+
+            push(`Deleted successfully.`, { duration: 3000 });
         } catch (err) {
             console.error("Delete error:", err);
-            alert("Failed to delete file.");
+            push(`Failed to delete files!`, { duration: 3000 });
         }
     }
 
@@ -98,9 +100,11 @@
             }
 
             await invalidateAll();
+
+            push('Upload completed.', { duration: 3000 });
         } catch (err) {
             console.error("Upload error:", err);
-            alert("Failed to upload files.");
+            push("Failed to upload files.", { duration: 3000 });
         }
     }
 </script>
@@ -245,7 +249,7 @@
 
                     {/if}
 
-                    {#each data.files as file}
+                    {#each files as file}
 
                         <li>
 
@@ -267,9 +271,12 @@
 
                                     </a>
 
-                                    <button
-                                        class="ml-4 shrink-0 bg-zinc-800 px-4 py-2 rounded-lg hover:bg-zinc-700 border border-zinc-600 cursor-pointer"
-                                        onclick={() => deleteFile(file)}
+                                    <button type="button" class="ml-4 shrink-0 bg-zinc-800 px-4 py-2 rounded-lg hover:bg-zinc-700 border border-zinc-600 cursor-pointer"
+                                        onclick={(event) => {
+                                            event.stopPropagation();
+                                            event.preventDefault();
+                                            deleteFile(file);
+                                        }}
                                     >
                                         Delete
                                     </button>
@@ -295,10 +302,12 @@
 
                                     </div>
 
-                                    <button class="ml-auto bg-zinc-800 px-4 py-2 rounded-lg hover:bg-zinc-700 border border-zinc-600 cursor-pointer" onclick={(event) => {
-                                        event.stopPropagation();
-                                        deleteFile(file);
-                                    }}>Delete
+                                    <button type="button" class="ml-auto bg-zinc-800 px-4 py-2 rounded-lg hover:bg-zinc-700 border border-zinc-600 cursor-pointer" 
+                                        onclick={(event) => {
+                                            event.stopPropagation();
+                                            event.preventDefault();
+                                            deleteFile(file);
+                                        }}>Delete
                                     </button>
 
                                 </div>
