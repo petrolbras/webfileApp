@@ -8,61 +8,94 @@ import { json } from '@sveltejs/kit';
 import { GetAvailableName } from '$lib/getAvailableName';
 
 const STORAGE_DIR = path.resolve('storage');
-const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100 MB
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
+const MAX_UPLOAD_SIZE = 100 * 1024 * 1024; // 100 MB
 
 export async function POST({request}) {
     try {
 
         const formData = await request.formData();
-        const file = formData.get('file');
 
-        const relativepath = (formData.get('path') as string) || '';
+        const files = formData.getAll('files') as File[] | null;
+        const paths = formData.getAll('paths') as string[];
+
         const resolvedRoot = path.resolve(STORAGE_DIR);
-        const destinationDir = path.resolve(path.join(STORAGE_DIR, relativepath));
-        const resolvedDestination = path.resolve(destinationDir);
-    
-        if (!resolvedDestination.startsWith(resolvedRoot)) {
-            return json({ error: 'Access denied' }, { status: 400 });
+
+        const uploadedFiles = [];
+
+        let totalUploadSize = 0;
+
+        for (const file of files ?? []) {
+
+            if (!(file instanceof File)) {
+                continue;
+            }
+
+            totalUploadSize += file.size;
         }
 
-        if (!(file instanceof File)) {
-            return json({ error: 'No file uploaded' }, { status: 400 });
+        if (totalUploadSize > MAX_UPLOAD_SIZE) {
+            return json({ error: 'Upload size exceeds limit' }, { status: 400 });
         }
 
-        if (file.size > MAX_FILE_SIZE) {
-            return json({ error: 'File exceeds 100MB limit' }, { status: 400 });
+        if (!files || files.length === 0) {
+            return json({ error: 'No files uploaded' }, { status: 400 });
         }
 
-        const SanitizedName = SanitizeName(file.name);
-        const AvailableName = await GetAvailableName(destinationDir, SanitizedName);
-        const finalFilePath = path.join(destinationDir, AvailableName);
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const relativePath = paths[i] || file.name;
 
-        if (!finalFilePath.startsWith(resolvedDestination)) {
-            return json({ error: 'Invalid file name' }, { status: 400 });
-        }
+            if (!(file instanceof File)) {
+                continue;
+            }
 
-        await fs.mkdir(destinationDir, { recursive: true });
+            if (file.size > MAX_FILE_SIZE) {
+                continue;
+            }
 
-        const nodeReadableStream = Readable.fromWeb(file.stream() as any);
-        const writeStream = createWriteStream(finalFilePath);
+            const normalizedRelativePath = path.normalize(relativePath);
 
-        await pipeline(
-            nodeReadableStream,
-            writeStream
-        );
+            const resolvedFilePath = path.resolve(STORAGE_DIR, normalizedRelativePath);
 
-        console.log("Saving to:", finalFilePath);
+            if (!resolvedFilePath.startsWith(resolvedRoot)) {
+                continue;
+            }
 
-        return json({
-            message: 'File uploaded successfully',
-            file: {
+            const originalName = path.basename(normalizedRelativePath);
+            const SanitizedName = SanitizeName(originalName);
+
+            const fileDir = path.dirname(resolvedFilePath);
+
+            await fs.mkdir(fileDir, {
+                recursive: true
+            });
+
+            const AvailableName = await GetAvailableName(fileDir, SanitizedName);
+
+            const finalFilePath = path.join(fileDir, AvailableName);
+
+            const readableStream = Readable.fromWeb(file.stream() as any);
+            const writeStream = createWriteStream(finalFilePath);
+
+            await pipeline(
+                readableStream,
+                writeStream
+            );
+
+            console.log("Saved:", finalFilePath);
+
+            uploadedFiles.push({
                 name: AvailableName,
                 size: file.size,
-                mime: file.type,
-                createdAt: new Date().toISOString()
-            }
-        });
+                mime: file.type
+            });
+        }
 
+        return json({
+            message: 'Upload completed',
+            files: uploadedFiles
+        });
     } catch (err) {
         console.error("Upload error:", err);
 

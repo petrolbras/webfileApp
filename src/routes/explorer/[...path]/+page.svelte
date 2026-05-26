@@ -1,6 +1,7 @@
 <script lang="ts">
     import type { PageData } from './$types';
     import { invalidateAll } from '$app/navigation';
+    import { push } from '$lib/components/toast.svelte';
 
     let { data }: { data: PageData } = $props();
 
@@ -21,7 +22,10 @@
 
     });
 
+    let showMenu = $state(false);
+
     let fileInput: HTMLInputElement;
+    let folderInput: HTMLInputElement;
 
     interface FileItem {
         name: string;
@@ -68,35 +72,35 @@
     }
 
     async function handleUpload(event: Event) { 
-        const target = event.target as HTMLInputElement;
-        const file = target.files?.[0];
+        const input = event.target as HTMLInputElement;
 
-        if (!file) {
-            return;
+        const files = Array.from(input.files || []);
+
+        if (!files.length) { return; }
+
+        const formData = new FormData();
+
+        for (const file of files) {
+            formData.append('files', file);
+            formData.append('paths', file.webkitRelativePath || file.name);
         }
 
         try {
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('path', data.currentPath);
-
             const res = await fetch('/api/uploads', {
                 method: 'POST',
                 body: formData
-            })
+            });
 
             const result = await res.json();
 
             if (!res.ok) {
-                throw new Error(result.error || 'Upload failed');
+                throw new Error(result.error);
             }
 
             await invalidateAll();
         } catch (err) {
             console.error("Upload error:", err);
-            alert("Failed to upload file.");
-        } finally {
-            target.value = '';
+            alert("Failed to upload files.");
         }
     }
 </script>
@@ -114,13 +118,58 @@
                 <input
                     bind:this={fileInput}
                     type="file"
+                    multiple
                     class="hidden"
                     onchange={handleUpload}
                 />
 
-                <button class="ml-auto bg-zinc-800 px-4 py-2 rounded-lg hover:bg-zinc-700 border border-zinc-600 cursor-pointer"
-                    onclick={() => fileInput.click()}
-                >+</button>
+                <input 
+                    bind:this={folderInput}
+                    type="file"
+                    multiple
+                    webkitdirectory
+                    class="hidden"
+                    onchange={handleUpload}
+                />
+
+                <div class="relative ml-auto">
+
+                    <button
+                        class="bg-zinc-800 px-4 py-2 rounded-lg hover:bg-zinc-700 border border-zinc-600 cursor-pointer"
+                        onclick={() => showMenu = !showMenu}
+                    >
+                        +
+                    </button>
+
+                    {#if showMenu}
+
+                        <div class="absolute top-0 right-full mr-3 bg-zinc-800 border border-zinc-600 rounded-lg shadow-lg py-2 min-w-48 z-50">
+
+                        <button
+                            class="w-full text-left px-4 py-2 hover:bg-zinc-700 cursor-pointer"
+                            onclick={() => {
+                            fileInput.click();
+                            showMenu = false;
+                            }}
+                        >
+                        Upload Files
+                        </button>
+
+                        <button
+                            class="w-full text-left px-4 py-2 hover:bg-zinc-700 cursor-pointer"
+                            onclick={() => {
+                            folderInput.click();
+                            showMenu = false;
+                            }}
+                        >
+                        Upload Folder
+                        </button>
+
+                </div>
+
+            {/if}
+
+            </div>
 
             </div>
 
