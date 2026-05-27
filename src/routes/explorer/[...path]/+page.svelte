@@ -2,13 +2,15 @@
     import type { PageData } from './$types';
     import { invalidateAll } from '$app/navigation';
     import { push } from '$lib/components/toast.svelte';
-    import { faFolderOpen, faPlus } from '@fortawesome/free-solid-svg-icons';
+    import { faFile, faFolderOpen, faPlus } from '@fortawesome/free-solid-svg-icons';
     import { FontAwesomeIcon } from '@fortawesome/svelte-fontawesome';
 
     let { data }: { data: PageData } = $props();
 
     let creatingFolder = $state(false);
     let newFolderName = $state('');
+    let creatingFile = $state(false);
+    let newFileName = $state('');
 
     $effect(() => {
         data.currentPath;
@@ -158,11 +160,55 @@
         await invalidateAll();
 
         push('Folder created successfully.', { duration: 3000 });
-    } catch (err) {
-        console.error("Create folder error:", err);
-        push(err instanceof Error ? err.message : "Failed to create folder.", { duration: 3000 });
+
+        } catch (err) {
+            console.error("Create folder error:", err);
+            push(err instanceof Error ? err.message : "Failed to create folder.", { duration: 3000 });
+        }
     }
-}
+
+    async function createFile() {
+
+        if (!newFileName.trim()) {
+            return;
+        }
+
+        if (newFileName.includes('/')) {
+            push("File name cannot contain '/'.", { duration: 3000 });
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/create-file', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    newFileName,
+                    currentPath: data.currentPath
+                })
+            });
+
+        const result = await res.json();
+
+        if (!res.ok) {
+            throw new Error(result.error);
+        }
+
+        newFileName = '';
+
+        creatingFile = false;
+
+        await invalidateAll();
+
+        push('File created successfully.', { duration: 3000 });
+
+        } catch (err) {
+            console.error("Create file error:", err);
+            push(err instanceof Error ? err.message : "Failed to create file.", { duration: 3000 });
+        }
+    }
 
 </script>
 
@@ -194,22 +240,39 @@
                 />
 
                 <div class="relative ml-auto flex flex-col items-center gap-2">
+ 
+                    <div class="relative ml-auto flex items-end gap-2">
 
-                <button
-                    class="w-10 h-10 flex items-center justify-center bg-zinc-800 rounded-lg hover:bg-zinc-700 border border-zinc-600 cursor-pointer"
-                    onclick={() => showMenu = !showMenu}
-                >
-                    <FontAwesomeIcon icon={faPlus} />
-                </button>
+                        <button
+                            class="w-10 h-10 flex items-center justify-center bg-zinc-800 rounded-lg hover:bg-zinc-700 border border-zinc-600 cursor-pointer"
+                            aria-label="Create file"
+                            title="Create file"
+                            onclick={() => creatingFile = !creatingFile}
+                        >
+                            <FontAwesomeIcon icon={faFile} />
+                        </button>
 
-                <button
-                    class="w-10 h-10 flex items-center justify-center bg-zinc-800 rounded-lg hover:bg-zinc-700 border border-zinc-600 cursor-pointer"
-                    aria-label="Create folder"
-                    title="Create folder"
-                    onclick={() => creatingFolder = !creatingFolder}
-                >
-                    <FontAwesomeIcon icon={faFolderOpen} />
-                </button>
+                        <div class="flex flex-col items-center gap-2">
+
+                            <button
+                                class="w-10 h-10 flex items-center justify-center bg-zinc-800 rounded-lg hover:bg-zinc-700 border border-zinc-600 cursor-pointer"
+                                onclick={() => showMenu = !showMenu}
+                            >
+                                <FontAwesomeIcon icon={faPlus} />
+                            </button>
+
+                            <button
+                                class="w-10 h-10 flex items-center justify-center bg-zinc-800 rounded-lg hover:bg-zinc-700 border border-zinc-600 cursor-pointer"
+                                aria-label="Create folder"
+                                title="Create folder"
+                                onclick={() => creatingFolder = !creatingFolder}
+                            >
+                                <FontAwesomeIcon icon={faFolderOpen} />
+                            </button>
+
+                        </div>
+
+                    </div>
 
                     {#if showMenu}
 
@@ -324,6 +387,33 @@
                                     }}
                                     class="bg-zinc-800 border border-zinc-600 rounded px-3 py-2 outline-none"
                                     placeholder="Folder name"
+                                />
+
+                            </div>
+
+                        </li>
+
+                    {/if}
+                    
+                    {#if creatingFile}
+
+                        <li class="px-5 py-4">
+
+                            <div class="flex items-center gap-4">
+
+                                <span class="text-3xl">📄</span>
+
+                                <input
+                                    bind:value={newFileName}
+                                    onkeydown={(event) => {
+                                        if (event.key === 'Enter') {
+                                            createFile();
+                                        } else if (event.key === 'Escape') {
+                                            creatingFile = false;
+                                        }
+                                    }}
+                                    class="bg-zinc-800 border border-zinc-600 rounded px-3 py-2 outline-none"
+                                    placeholder="File name"
                                 />
 
                             </div>
