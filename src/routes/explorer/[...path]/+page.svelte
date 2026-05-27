@@ -2,8 +2,13 @@
     import type { PageData } from './$types';
     import { invalidateAll } from '$app/navigation';
     import { push } from '$lib/components/toast.svelte';
+    import { faFolderOpen, faPlus } from '@fortawesome/free-solid-svg-icons';
+    import { FontAwesomeIcon } from '@fortawesome/svelte-fontawesome';
 
     let { data }: { data: PageData } = $props();
+
+    let creatingFolder = $state(false);
+    let newFolderName = $state('');
 
     let files = $derived.by(() => [...data.files]);
 
@@ -78,9 +83,12 @@
 
         const files = Array.from(input.files || []);
 
-        if (!files.length) { return; }
+        if (!files.length) {
+            return;
+        }
 
         const formData = new FormData();
+        formData.append('currentPath', data.currentPath);
 
         for (const file of files) {
             formData.append('files', file);
@@ -107,6 +115,44 @@
             push("Failed to upload files.", { duration: 3000 });
         }
     }
+
+    async function createFolder() {
+
+        if (!newFolderName.trim()) {
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/create-folder', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    newFolderName,
+                    currentPath: data.currentPath
+                })
+            });
+
+        const result = await res.json();
+
+        if (!res.ok) {
+            throw new Error(result.error);
+        }
+
+        newFolderName = '';
+
+        creatingFolder = false;
+
+        await invalidateAll();
+
+        push('Folder created successfully.', { duration: 3000 });
+    } catch (err) {
+        console.error("Create folder error:", err);
+        push("Failed to create folder.", { duration: 3000 });
+    }
+}
+
 </script>
 
 <div class="min-h-screen bg-zinc-950 text-zinc-100 flex items-center justify-center p-6">
@@ -118,7 +164,7 @@
             <div class="flex items-center">
 
                 <h1 class="text-5xl font-bold tracking-tight mb-3">Explorer</h1>
-                
+
                 <input
                     bind:this={fileInput}
                     type="file"
@@ -127,7 +173,7 @@
                     onchange={handleUpload}
                 />
 
-                <input 
+                <input
                     bind:this={folderInput}
                     type="file"
                     multiple
@@ -136,50 +182,61 @@
                     onchange={handleUpload}
                 />
 
-                <div class="relative ml-auto">
+                <div class="relative ml-auto flex flex-col items-center gap-2">
 
-                    <button
-                        class="bg-zinc-800 px-4 py-2 rounded-lg hover:bg-zinc-700 border border-zinc-600 cursor-pointer"
-                        onclick={() => showMenu = !showMenu}
-                    >
-                        +
-                    </button>
+                <button
+                    class="w-10 h-10 flex items-center justify-center bg-zinc-800 rounded-lg hover:bg-zinc-700 border border-zinc-600 cursor-pointer"
+                    onclick={() => showMenu = !showMenu}
+                >
+                    <FontAwesomeIcon icon={faPlus} />
+                </button>
+
+                <button
+                    class="w-10 h-10 flex items-center justify-center bg-zinc-800 rounded-lg hover:bg-zinc-700 border border-zinc-600 cursor-pointer"
+                    aria-label="Create folder"
+                    title="Create folder"
+                    onclick={() => creatingFolder = !creatingFolder}
+                >
+                    <FontAwesomeIcon icon={faFolderOpen} />
+                </button>
 
                     {#if showMenu}
 
                         <div class="absolute top-0 right-full mr-3 bg-zinc-800 border border-zinc-600 rounded-lg shadow-lg py-2 min-w-48 z-50">
 
-                        <button
-                            class="w-full text-left px-4 py-2 hover:bg-zinc-700 cursor-pointer"
-                            onclick={() => {
-                            fileInput.click();
-                            showMenu = false;
-                            }}
-                        >
-                        Upload Files
-                        </button>
+                            <button
+                                class="w-full text-left px-4 py-2 hover:bg-zinc-700 cursor-pointer"
+                                onclick={() => {
+                                    fileInput.click();
+                                    showMenu = false;
+                                }}
+                            >
+                                Upload Files
+                            </button>
 
-                        <button
-                            class="w-full text-left px-4 py-2 hover:bg-zinc-700 cursor-pointer"
-                            onclick={() => {
-                            folderInput.click();
-                            showMenu = false;
-                            }}
-                        >
-                        Upload Folder
-                        </button>
+                            <button
+                                class="w-full text-left px-4 py-2 hover:bg-zinc-700 cursor-pointer"
+                                onclick={() => {
+                                    folderInput.click();
+                                    showMenu = false;
+                                }}
+                            >
+                                Upload Folder
+                            </button>
+
+                        </div>
+
+                    {/if}
 
                 </div>
-
-            {/if}
-
-            </div>
 
             </div>
 
             <nav class="flex flex-wrap items-center text-lg text-zinc-400 gap-1">
 
-                <a href="/explorer" class="hover:text-blue-400 transition-colors">Home</a>
+                <a href="/explorer" class="hover:text-blue-400 transition-colors">
+                    Home
+                </a>
 
                 {#each segments as segment, index}
 
@@ -187,7 +244,12 @@
 
                     <span class="text-zinc-600">/</span>
 
-                    <a href={`/explorer/${partialPath}`} class="hover:text-blue-400 transition-colors">{segment}</a>
+                    <a
+                        href={`/explorer/${partialPath}`}
+                        class="hover:text-blue-400 transition-colors"
+                    >
+                        {segment}
+                    </a>
 
                 {/each}
 
@@ -197,30 +259,8 @@
 
         {#if data.error}
 
-            <div class="rounded-xl bg-red-950 border border-red-800 p-4 text-red-300">{data.error}</div>
-
-        {:else if data.files.length === 0}
-
-            <div class="rounded-xl border border-zinc-800 overflow-hidden">
-
-                <ul class="divide-y divide-zinc-800">
-
-                    <li>
-
-                        <a href={parentPath ? `/explorer/${parentPath}` : '/explorer'} class="flex items-center gap-3 px-5 py-4 hover:bg-zinc-800 transition-colors text-zinc-300">
-
-                            <span class="text-xl">◀</span>
-
-                            <span class="mt-1">Back</span>
-
-                        </a>
-
-                    </li>
-
-                </ul>
-
-                <div class="p-6 text-zinc-400 bg-zinc-950">Empty folder.</div>
-
+            <div class="rounded-xl bg-red-950 border border-red-800 p-4 text-red-300">
+                {data.error}
             </div>
 
         {:else}
@@ -231,15 +271,20 @@
 
                     {#if data.currentPath === ''}
 
-                        <div class="flex items-center gap-3 px-5 py-4 text-zinc-600"><span>This is the root folder.</span></div>
+                        <div class="flex items-center gap-3 px-5 py-4 text-zinc-400">
+                            <span>This is the root folder.</span>
+                        </div>
 
                     {:else}
 
                         <li>
 
-                            <a href={parentPath ? `/explorer/${parentPath}` : '/explorer'} class="flex items-center gap-3 px-5 py-4 hover:bg-zinc-800 transition-colors text-zinc-300">
+                            <a
+                                href={parentPath ? `/explorer/${parentPath}` : '/explorer'}
+                                class="flex items-center gap-3 px-5 py-4 hover:bg-zinc-800 transition-colors text-zinc-300"
+                            >
 
-                                <span class="text-xl"> ◀</span>
+                                <span class="text-xl">◀</span>
 
                                 <span class="mt-1">Back</span>
 
@@ -249,29 +294,81 @@
 
                     {/if}
 
+                    {#if creatingFolder}
+
+                        <li class="px-5 py-4">
+
+                            <div class="flex items-center gap-4">
+
+                                <span class="text-3xl">📁</span>
+
+                                <input
+                                    bind:value={newFolderName}
+                                    onkeydown={(event) => {
+                                        if (event.key === 'Enter') {
+                                            createFolder();
+                                        } else if (event.key === 'Escape') {
+                                            creatingFolder = false;
+                                        }
+                                    }}
+                                    class="bg-zinc-800 border border-zinc-600 rounded px-3 py-2 outline-none"
+                                    placeholder="Folder name"
+                                />
+
+                            </div>
+
+                        </li>
+
+                    {/if}
+
+                    {#if data.files.length === 0}
+
+                        <div class="rounded-xl overflow-hidden">
+                            
+                            <div class="p-6 text-zinc-400 bg-zinc-950">
+                                Empty folder.
+                            </div>
+
+                        </div>
+
+                    {/if}
+
                     {#each files as file}
 
                         <li>
 
                             {#if file.type === 'folder'}
 
-                                <div class="flex items-center px-5 py-4 hover:bg-zinc-800 transition-colors" >
+                                <div class="flex items-center px-5 py-4 hover:bg-zinc-800 transition-colors">
 
-                                    <a href={ data.currentPath ? `/explorer/${data.currentPath}/${file.name}` : `/explorer/${file.name}` } class="flex items-center gap-4 flex-1 min-w-0">
+                                    <a
+                                        href={
+                                            data.currentPath
+                                                ? `/explorer/${data.currentPath}/${file.name}`
+                                                : `/explorer/${file.name}`
+                                        }
+                                        class="flex items-center gap-4 flex-1 min-w-0"
+                                    >
 
-                                        <span class="text-3xl shrink-0"> 📁</span>
+                                        <span class="text-3xl shrink-0">📁</span>
 
                                         <div class="flex flex-col min-w-0">
 
-                                            <span class="text-xl text-zinc-100 break-all hover:text-blue-400">{file.name}</span>
+                                            <span class="text-xl text-zinc-100 break-all hover:text-blue-400">
+                                                {file.name}
+                                            </span>
 
-                                            <div class="flex items-center gap-2 text-sm text-zinc-500"><span>{file.size}</span></div>
+                                            <div class="flex items-center gap-2 text-sm text-zinc-500">
+                                                <span>{file.size}</span>
+                                            </div>
 
                                         </div>
 
                                     </a>
 
-                                    <button type="button" class="ml-4 shrink-0 bg-zinc-800 px-4 py-2 rounded-lg hover:bg-zinc-700 border border-zinc-600 cursor-pointer"
+                                    <button
+                                        type="button"
+                                        class="ml-4 shrink-0 bg-zinc-800 px-4 py-2 rounded-lg hover:bg-zinc-700 border border-zinc-600 cursor-pointer"
                                         onclick={(event) => {
                                             event.stopPropagation();
                                             event.preventDefault();
@@ -282,6 +379,7 @@
                                     </button>
 
                                 </div>
+
                             {:else}
 
                                 <div class="flex items-center gap-4 px-5 py-4 text-zinc-300">
@@ -290,7 +388,9 @@
 
                                     <div class="flex flex-col min-w-0">
 
-                                        <span class="text-xl text-zinc-100 break-all">{file.name}</span>
+                                        <span class="text-xl text-zinc-100 break-all">
+                                            {file.name}
+                                        </span>
 
                                         <div class="flex items-center gap-2 text-sm text-zinc-500">
 
@@ -302,12 +402,16 @@
 
                                     </div>
 
-                                    <button type="button" class="ml-auto bg-zinc-800 px-4 py-2 rounded-lg hover:bg-zinc-700 border border-zinc-600 cursor-pointer" 
+                                    <button
+                                        type="button"
+                                        class="ml-auto bg-zinc-800 px-4 py-2 rounded-lg hover:bg-zinc-700 border border-zinc-600 cursor-pointer"
                                         onclick={(event) => {
                                             event.stopPropagation();
                                             event.preventDefault();
                                             deleteFile(file);
-                                        }}>Delete
+                                        }}
+                                    >
+                                        Delete
                                     </button>
 
                                 </div>

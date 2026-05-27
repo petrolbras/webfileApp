@@ -18,8 +18,10 @@ export async function POST({request}) {
 
         const files = formData.getAll('files') as File[] | null;
         const paths = formData.getAll('paths') as string[];
+        const currentPath = String(formData.get('currentPath') || '');
 
         const resolvedRoot = path.resolve(STORAGE_DIR);
+        const resolvedCurrentDir = path.resolve(STORAGE_DIR, currentPath);
 
         const uploadedFiles = [];
 
@@ -56,7 +58,7 @@ export async function POST({request}) {
 
             const normalizedRelativePath = path.normalize(relativePath);
 
-            const resolvedFilePath = path.resolve(STORAGE_DIR, normalizedRelativePath);
+            const resolvedFilePath = path.resolve(resolvedCurrentDir, normalizedRelativePath);
 
             if (!resolvedFilePath.startsWith(resolvedRoot)) {
                 continue;

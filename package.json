@@ -28,6 +28,7 @@
 	"dependencies": {
 		"@fortawesome/free-brands-svg-icons": "^7.2.0",
 		"@fortawesome/free-solid-svg-icons": "^7.2.0",
+		"@fortawesome/svelte-fontawesome": "github:fortawesome/svelte-fontawesome",
 		"better-sqlite3": "^12.10.0",
 		"drizzle-orm": "^0.45.2",
 		"svelte-fa": "^4.0.4"
