@@ -10,6 +10,13 @@
     let creatingFolder = $state(false);
     let newFolderName = $state('');
 
+    $effect(() => {
+        data.currentPath;
+
+        creatingFolder = false;
+        newFolderName = '';
+    });
+
     let files = $derived.by(() => [...data.files]);
 
     const segments = $derived.by(() =>
@@ -33,7 +40,6 @@
 
     let fileInput: HTMLInputElement;
     let folderInput: HTMLInputElement;
-
     interface FileItem {
         name: string;
         type: 'file' | 'folder';
@@ -119,6 +125,11 @@
     async function createFolder() {
 
         if (!newFolderName.trim()) {
+            return;
+        }
+
+        if (newFolderName.includes('/')) {
+            push("Folder name cannot contain '/'.", { duration: 3000 });
             return;
         }
 
