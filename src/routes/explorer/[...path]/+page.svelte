@@ -80,7 +80,7 @@
             push(`Deleted successfully.`, { duration: 3000 });
         } catch (err) {
             console.error("Delete error:", err);
-            push(`Failed to delete files!`, { duration: 3000 });
+            push(err instanceof Error ? err.message : "Failed to delete.", { duration: 3000 });
         }
     }
 
@@ -118,7 +118,7 @@
             push('Upload completed.', { duration: 3000 });
         } catch (err) {
             console.error("Upload error:", err);
-            push("Failed to upload files.", { duration: 3000 });
+            push(err instanceof Error ? err.message : "Upload failed.", { duration: 3000 });
         }
     }
 
@@ -160,7 +160,7 @@
         push('Folder created successfully.', { duration: 3000 });
     } catch (err) {
         console.error("Create folder error:", err);
-        push("Failed to create folder.", { duration: 3000 });
+        push(err instanceof Error ? err.message : "Failed to create folder.", { duration: 3000 });
     }
 }
 

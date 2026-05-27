@@ -9,7 +9,6 @@ import { GetAvailableName } from '$lib/getAvailableName';
 
 const STORAGE_DIR = path.resolve('storage');
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
-const MAX_UPLOAD_SIZE = 100 * 1024 * 1024; // 100 MB
 
 export async function POST({request}) {
     try {
@@ -36,8 +35,8 @@ export async function POST({request}) {
             totalUploadSize += file.size;
         }
 
-        if (totalUploadSize > MAX_UPLOAD_SIZE) {
-            return json({ error: 'Upload size exceeds limit' }, { status: 400 });
+        if (totalUploadSize > MAX_FILE_SIZE) {
+            return json({ error: 'Total upload size cannot exceed 50 MB' }, { status: 400 });
         }
 
         if (!files || files.length === 0) {
