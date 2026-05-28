@@ -8,15 +8,15 @@ importers:
 
   .:
     dependencies:
+      '@fortawesome/fontawesome-svg-core':
+        specifier: ^7.2.0
+        version: 7.2.0
       '@fortawesome/free-brands-svg-icons':
         specifier: ^7.2.0
         version: 7.2.0
       '@fortawesome/free-solid-svg-icons':
         specifier: ^7.2.0
         version: 7.2.0
-      '@fortawesome/svelte-fontawesome':
-        specifier: github:fortawesome/svelte-fontawesome
-        version: https://codeload.github.com/fortawesome/svelte-fontawesome/tar.gz/3d4b092bf694de6e7ac8a7c8f6eaa3d11fdd273d(@fortawesome/fontawesome-svg-core@7.2.0)(svelte@5.55.5)
       better-sqlite3:
         specifier: ^12.10.0
         version: 12.10.0
@@ -545,13 +545,6 @@ packages:
   '@fortawesome/free-solid-svg-icons@7.2.0':
     resolution: {integrity: sha512-YTVITFGN0/24PxzXrwqCgnyd7njDuzp5ZvaCx5nq/jg55kUYd94Nj8UTchBdBofi/L0nwRfjGOg0E41d2u9T1w==}
     engines: {node: '>=6'}
-
-  '@fortawesome/svelte-fontawesome@https://codeload.github.com/fortawesome/svelte-fontawesome/tar.gz/3d4b092bf694de6e7ac8a7c8f6eaa3d11fdd273d':
-    resolution: {gitHosted: true, integrity: sha512-8Krten4d7f1NZZdrBpkk+eEJ/QR2OagyKRy/z0GtFCWibsnckgy0zemCkCXQUIj/UuPlXxPEeI3IhsoZCN5Xxg==, tarball: https://codeload.github.com/fortawesome/svelte-fontawesome/tar.gz/3d4b092bf694de6e7ac8a7c8f6eaa3d11fdd273d}
-    version: 0.2.4
-    peerDependencies:
-      '@fortawesome/fontawesome-svg-core': ~1 || ~6 || ~7
-      svelte: ~3 || ~4 || ~5
 
   '@jridgewell/gen-mapping@0.3.13':
     resolution: {integrity: sha512-2kkt/7niJ6MgEPxF0bYdQ6etZaA+fQvDcLKckhy1yIQOzaoKjBBjSj63/aLVjYE3qhRt5dvM+uUyfCg6UKCBbA==}
@@ -1657,11 +1650,6 @@ snapshots:
   '@fortawesome/free-solid-svg-icons@7.2.0':
     dependencies:
       '@fortawesome/fontawesome-common-types': 7.2.0
-
-  '@fortawesome/svelte-fontawesome@https://codeload.github.com/fortawesome/svelte-fontawesome/tar.gz/3d4b092bf694de6e7ac8a7c8f6eaa3d11fdd273d(@fortawesome/fontawesome-svg-core@7.2.0)(svelte@5.55.5)':
-    dependencies:
-      '@fortawesome/fontawesome-svg-core': 7.2.0
-      svelte: 5.55.5
 
   '@jridgewell/gen-mapping@0.3.13':
     dependencies:

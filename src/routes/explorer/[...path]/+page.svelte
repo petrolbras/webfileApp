@@ -3,7 +3,7 @@
     import { invalidateAll } from '$app/navigation';
     import { push } from '$lib/components/toast.svelte';
     import { faFile, faFolderOpen, faPlus } from '@fortawesome/free-solid-svg-icons';
-    import { FontAwesomeIcon } from '@fortawesome/svelte-fontawesome';
+    import Fa from 'svelte-fa';
 
     let { data }: { data: PageData } = $props();
 
@@ -244,12 +244,12 @@
                     <div class="relative ml-auto flex items-end gap-2">
 
                         <button
-                            class="w-10 h-10 flex items-center justify-center bg-zinc-800 rounded-lg hover:bg-zinc-700 border border-zinc-600 cursor-pointer"
+                            class="w-10 h-10 flex items-center justify-center bg-zinc-800 rounded-lg hover:bg-zinc-700 border border-zinc-600 cursor-pointer text-red"
                             aria-label="Create file"
                             title="Create file"
                             onclick={() => creatingFile = !creatingFile}
                         >
-                            <FontAwesomeIcon icon={faFile} />
+                            <Fa icon={faFile}></Fa>
                         </button>
 
                         <div class="flex flex-col items-center gap-2">
@@ -258,7 +258,7 @@
                                 class="w-10 h-10 flex items-center justify-center bg-zinc-800 rounded-lg hover:bg-zinc-700 border border-zinc-600 cursor-pointer"
                                 onclick={() => showMenu = !showMenu}
                             >
-                                <FontAwesomeIcon icon={faPlus} />
+                                <Fa icon={faPlus}></Fa>
                             </button>
 
                             <button
@@ -267,7 +267,7 @@
                                 title="Create folder"
                                 onclick={() => creatingFolder = !creatingFolder}
                             >
-                                <FontAwesomeIcon icon={faFolderOpen} />
+                                <Fa icon={faFolderOpen}></Fa>
                             </button>
 
                         </div>
