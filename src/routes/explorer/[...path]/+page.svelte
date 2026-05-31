@@ -11,12 +11,24 @@
     let newFolderName = $state('');
     let creatingFile = $state(false);
     let newFileName = $state('');
+    let showMenu = $state(false);
+
+    let openedMenuPath = $state<string | null>(null);
+    let renamingPath = $state<string | null>(null);
+    let renamingValue = $state('');
 
     $effect(() => {
         data.currentPath;
 
         creatingFolder = false;
         newFolderName = '';
+    });
+
+    $effect(() => {
+        data.currentPath;
+
+        renamingPath = null;
+        renamingValue = '';
     });
 
     let files = $derived.by(() => [...data.files]);
@@ -38,8 +50,6 @@
 
     });
 
-    let showMenu = $state(false);
-
     let fileInput: HTMLInputElement;
     let folderInput: HTMLInputElement;
     interface FileItem {
@@ -48,6 +58,11 @@
         size: string;
         mime: string | null;
         path: string;
+    }
+
+    export function startRename(file: FileItem) {
+        renamingPath = file.path;
+        renamingValue = file.name;
     }
 
     async function deleteFile(file: FileItem) {
@@ -210,6 +225,52 @@
         }
     }
 
+    async function renameFile(file: FileItem) {
+        if (!renamingValue.trim()) {
+            return;
+        }
+
+        if (renamingValue === file.name) {
+            push("Name cannot be the same as the current name.", { duration: 3000 });
+            return;
+        }
+
+        if (renamingValue.includes('/')) {
+            push("Name cannot contain '/'.", { duration: 3000 });
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/rename', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    currentPath: data.currentPath,
+                    oldName: file.name,
+                    newName: renamingValue
+                })
+            });
+
+            const result = await res.json();
+
+            if (!res.ok) {
+                throw new Error(result.error);
+            }
+
+            renamingPath = null;
+            renamingValue = '';
+
+            await invalidateAll();
+
+            push('Renamed successfully.', { duration: 3000 });
+        } catch (err) {
+            console.error("Rename error:", err);
+            push(err instanceof Error ? err.message : "Failed to rename.", { duration: 3000 });
+        }
+    }
+
 </script>
 
 <div class="min-h-screen bg-zinc-950 text-zinc-100 flex items-center justify-center p-6">
@@ -339,7 +400,7 @@
 
         {:else}
 
-            <div class="rounded-xl border border-zinc-800 overflow-hidden">
+            <div class="rounded-xl border border-zinc-800">
 
                 <ul class="divide-y divide-zinc-800">
 
@@ -438,86 +499,123 @@
 
                         <li>
 
-                            {#if file.type === 'folder'}
+                            <div class="relative flex items-center gap-4 px-5 py-4 hover:bg-zinc-800 transition-colors">
 
-                                <div class="flex items-center px-5 py-4 hover:bg-zinc-800 transition-colors">
+                                <span class="text-3xl shrink-0">
+                                    {file.type === 'folder' ? '📁' : '📄'}
+                                </span>
 
-                                    <a
-                                        href={
-                                            data.currentPath
-                                                ? `/explorer/${data.currentPath}/${file.name}`
-                                                : `/explorer/${file.name}`
-                                        }
-                                        class="flex items-center gap-4 flex-1 min-w-0"
-                                    >
+                                <div class="flex flex-col min-w-0 flex-1">
 
-                                        <span class="text-3xl shrink-0">📁</span>
+                                    {#if renamingPath === file.path}
 
-                                        <div class="flex flex-col min-w-0">
+                                        <input
+                                            bind:value={renamingValue}
+                                            class="bg-zinc-800 border border-zinc-600 rounded px-3 py-2 outline-none text-zinc-100"
+                                            onkeydown={(event) => {
 
-                                            <span class="text-xl text-zinc-100 break-all hover:text-blue-400">
+                                                if (event.key === 'Enter') {
+                                                    renameFile(file);
+                                                }
+
+                                                if (event.key === 'Escape') {
+                                                    renamingPath = null;
+                                                }
+
+                                            }}
+                                        />
+
+                                    {:else}
+
+                                        {#if file.type === 'folder'}
+
+                                            <a
+                                                href={
+                                                    data.currentPath
+                                                        ? `/explorer/${data.currentPath}/${file.name}`
+                                                        : `/explorer/${file.name}`
+                                                }
+                                                class="text-xl text-zinc-100 break-all hover:text-blue-400"
+                                            >
+                                                {file.name}
+                                            </a>
+
+                                        {:else}
+
+                                            <span class="text-xl text-zinc-100 break-all">
                                                 {file.name}
                                             </span>
 
-                                            <div class="flex items-center gap-2 text-sm text-zinc-500">
-                                                <span>{file.size}</span>
-                                            </div>
+                                        {/if}
 
-                                        </div>
+                                    {/if}
 
-                                    </a>
+                                    <div class="flex items-center gap-2 text-sm text-zinc-500">
 
-                                    <button
-                                        type="button"
-                                        class="ml-4 shrink-0 bg-zinc-800 px-4 py-2 rounded-lg hover:bg-zinc-700 border border-zinc-600 cursor-pointer"
-                                        onclick={(event) => {
-                                            event.stopPropagation();
-                                            event.preventDefault();
-                                            deleteFile(file);
-                                        }}
-                                    >
-                                        Delete
-                                    </button>
+                                        <span>{file.size}</span>
 
-                                </div>
-
-                            {:else}
-
-                                <div class="flex items-center gap-4 px-5 py-4 text-zinc-300">
-
-                                    <span class="text-3xl shrink-0">📄</span>
-
-                                    <div class="flex flex-col min-w-0">
-
-                                        <span class="text-xl text-zinc-100 break-all">
-                                            {file.name}
-                                        </span>
-
-                                        <div class="flex items-center gap-2 text-sm text-zinc-500">
-
-                                            <span>{file.size}</span>
-
+                                        {#if file.type === 'file'}
                                             <span>.{file.mime}</span>
-
-                                        </div>
+                                        {/if}
 
                                     </div>
 
+                                </div>
+
+                                <div class="relative">
+
                                     <button
                                         type="button"
-                                        class="ml-auto bg-zinc-800 px-4 py-2 rounded-lg hover:bg-zinc-700 border border-zinc-600 cursor-pointer"
-                                        onclick={(event) => {
-                                            event.stopPropagation();
-                                            event.preventDefault();
-                                            deleteFile(file);
+                                        class="bg-zinc-800 px-3 py-2 rounded-lg hover:bg-zinc-700 border border-zinc-600 cursor-pointer"
+                                        onclick={() => {
+                                            openedMenuPath =
+                                                openedMenuPath === file.path
+                                                    ? null
+                                                    : file.path;
                                         }}
                                     >
-                                        Delete
+                                        ...
                                     </button>
+
+                                    {#if openedMenuPath === file.path}
+
+                                        <div
+                                            class="absolute right-0 top-full mt-2 min-w-32 bg-zinc-800 border border-zinc-600 rounded-lg shadow-lg overflow-hidden z-50"
+                                        >
+
+                                            <button
+                                                class="w-full text-left px-4 py-2 hover:bg-zinc-700 cursor-pointer"
+                                                onclick={(event) => {
+                                                    event.stopPropagation();
+
+                                                    startRename(file);
+
+                                                    openedMenuPath = null;
+                                                }}
+                                            >
+                                                Rename
+                                            </button>
+
+                                            <button
+                                                class="w-full text-left px-4 py-2 hover:bg-zinc-700 cursor-pointer"
+                                                onclick={(event) => {
+                                                    event.stopPropagation();
+
+                                                    deleteFile(file);
+
+                                                    openedMenuPath = null;
+                                                }}
+                                            >
+                                                Delete
+                                            </button>
+
+                                        </div>
+
+                                    {/if}
 
                                 </div>
 
-                            {/if}
+                            </div>
 
                         </li>
 
