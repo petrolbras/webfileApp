@@ -22,7 +22,7 @@ export async function POST({request}) {
             return json({ error: 'Invalid path' }, { status: 400 });
         }
 
-        const availableFileName = await GetAvailableName(targetPath, sanitizedFileName);
+        const availableFileName = await GetAvailableName(path.resolve(STORAGE_DIR, currentPath), sanitizedFileName);
 
         const finalFilePath = path.resolve(STORAGE_DIR, currentPath, availableFileName);
 
